@@ -117,7 +117,10 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
 
       const res = await fetch(`${API}/eventos`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-usuario-id": usuario?.id_usuario || ""
+        },
         body: JSON.stringify(payload)
       });
 

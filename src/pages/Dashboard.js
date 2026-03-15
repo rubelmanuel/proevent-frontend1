@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import searchIcon from "./../img/search.png";
 import dashboardIcon from "./../img/dashboard.png";
 import eventosIcon from "./../img/eventos.png";
 import audiovisualIcon from "./../img/audiovisual.png";
-import evaluacionIcon from "./../img/evaluacion.png";
-import soporteIcon from "./../img/soporte.png";
 
 import DashboardHome from "./DashboardHome";
 import SoporteHome from "./SoporteHome";
@@ -15,10 +13,16 @@ import Eventos from "./Eventos";
 import Audiovisual from "./Audiovisual";
 import Evaluacion from "./Evaluacion";
 import AjustesUsuarios from "./AjustesUsuarios";
+import Bitacora from "./Bitacora";
 
-function Dashboard({ onLogoutClick, usuario }) {
+function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState("Dashboard");
-    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [userMenuOpen, setUserMenuOpen] = useState(false); // Keep this for the user profile dropdown
+
+    const toggleSidebar = () => {
+        setIsSidebarOpen(!isSidebarOpen);
+    };
 
     const toggleUserMenu = () => {
         setUserMenuOpen(!userMenuOpen);
@@ -27,19 +31,21 @@ function Dashboard({ onLogoutClick, usuario }) {
     const renderContent = () => {
         switch (activeTab) {
             case "Dashboard":
-                return <DashboardHome />;
+                return <DashboardHome usuario={usuario} />;
             case "Soporte":
                 return <SoporteHome />;
             case "Eventos":
                 return <Eventos usuario={usuario} />;
             case "Audiovisual":
-                return <Audiovisual />;
+                return <Audiovisual usuario={usuario} />;
             case "Evaluación":
                 return <Evaluacion />;
             case "Ajustes":
-                return <AjustesUsuarios />;
+                return <AjustesUsuarios usuario={usuario} />;
+            case "Bitacora":
+                return <Bitacora />;
             default:
-                return <DashboardHome />;
+                return <DashboardHome usuario={usuario} />;
         }
     };
 
@@ -57,6 +63,8 @@ function Dashboard({ onLogoutClick, usuario }) {
                 return "Evaluación de Eventos";
             case "Ajustes":
                 return "Ajustes de Sistema - Usuarios";
+            case "Bitacora":
+                return "Bitácora de Movimientos";
             default:
                 return activeTab;
         }
@@ -90,13 +98,19 @@ function Dashboard({ onLogoutClick, usuario }) {
                             Solicitud de Audiovisual
                         </li>
                         <li className={activeTab === "Evaluación" ? "active" : ""} onClick={() => setActiveTab("Evaluación")}>
-                            <img src={evaluacionIcon} alt="Evaluación" className="nav-icon-img" />
+                            <FiStar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                             Evaluación
                         </li>
                         <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
-                            <img src={soporteIcon} alt="Soporte" className="nav-icon-img" />
+                            <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                             Soporte
                         </li>
+                        {usuario?.rol === "Administrador" && (
+                            <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
+                                <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Bitácora Audit
+                            </li>
+                        )}
                     </ul>
                 </nav>
 
@@ -116,14 +130,7 @@ function Dashboard({ onLogoutClick, usuario }) {
                             <span>{usuario?.rol || "Sin rol"}</span>
                         </div>
                         {usuario?.rol === "Administrador" && (
-                            <div
-                                className="user-settings-icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveTab("Ajustes");
-                                }}
-                                title="Ajustes de Usuario"
-                            >
+                            <div className="user-settings-icon" onClick={(e) => { e.stopPropagation(); setActiveTab("Ajustes"); }} title="Ajustes de Usuario">
                                 <FiSettings className="action-icon" aria-hidden="true" />
                             </div>
                         )}

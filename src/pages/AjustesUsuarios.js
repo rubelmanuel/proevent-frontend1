@@ -4,7 +4,7 @@ import './../css/Dashboard.css';
 
 const API = 'http://localhost:8080';
 
-function AjustesUsuarios() {
+function AjustesUsuarios({ usuario }) {
     const [nombre, setNombre] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -53,7 +53,10 @@ function AjustesUsuarios() {
             if (editingId) {
                 const res = await fetch(`${API}/usuarios/${editingId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-usuario-id': usuario?.id_usuario || ''
+                    },
                     body: JSON.stringify({ nombre, correo: email, contrasena: password, id_rol: idRol })
                 });
                 const data = await res.json();
@@ -67,7 +70,10 @@ function AjustesUsuarios() {
             } else {
                 const res = await fetch(`${API}/usuarios`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-usuario-id': usuario?.id_usuario || ''
+                    },
                     body: JSON.stringify({ nombre, correo: email, contrasena: password, id_rol: idRol })
                 });
                 const data = await res.json();
@@ -109,7 +115,10 @@ function AjustesUsuarios() {
     const handleDelete = async (id) => {
         if (!window.confirm('¿Deseas eliminar este usuario de forma permanente?')) return;
         try {
-            const res = await fetch(`${API}/usuarios/${id}`, { method: 'DELETE' });
+            const res = await fetch(`${API}/usuarios/${id}`, { 
+                method: 'DELETE',
+                headers: { 'x-usuario-id': usuario?.id_usuario || '' }
+            });
             const data = await res.json();
             if (!res.ok) {
                 alert(data.mensaje || 'Error al eliminar usuario');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./../css/Audiovisual.css";
-import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast } from "react-icons/fi";
+import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw } from "react-icons/fi";
 
 const API = "http://localhost:8080";
 
@@ -27,17 +27,51 @@ export default function Audiovisual({ usuario }) {
   const [mensaje, setMensaje] = useState("");
   const [errorDate, setErrorDate] = useState(null); // Para la validación de 15 días
 
+  const [solicitudesAV, setSolicitudesAV] = useState([]);
+
   // 1. Cargar la lista de eventos del usuario (temporalmente cargamos todos por ser admin/teseo)
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then((res) => res.json())
       .then((data) => {
-        // Filtrar opcionalmente solo los del usuario activo si "usuario" estuviera disponible plenamente
-        // En este prototipo mostraremos todos para propósitos de prueba de la API
         setEventos(data);
       })
       .catch((err) => console.error("Error cargando eventos:", err));
-  }, []);
+      
+    // Cargar todas las solicitudes si es administrador
+    if (usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") {
+      cargarSolicitudesAV();
+    }
+  }, [usuario]);
+  
+  const cargarSolicitudesAV = () => {
+    fetch(`${API}/audiovisual`)
+      .then((res) => res.json())
+      .then((data) => {
+        setSolicitudesAV(data);
+      })
+      .catch((err) => console.error("Error cargando solicitudes audiovisuales:", err));
+  };
+
+  const handleCambiarEstado = async (id, nuevoEstado) => {
+    try {
+      const res = await fetch(`${API}/audiovisual/${id}/estado`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-usuario-id": usuario?.id_usuario || ""
+        },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      if (res.ok) {
+        cargarSolicitudesAV();
+      } else {
+        alert("Error al cambiar el estado.");
+      }
+    } catch {
+      alert("No se pudo conectar al servidor.");
+    }
+  };
 
   // 2. Manejar selección del evento y validar los 15 días inmediatamente
   const handleSelectEvent = (e) => {
@@ -127,7 +161,10 @@ export default function Audiovisual({ usuario }) {
     try {
       const res = await fetch(`${API}/audiovisual`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-usuario-id": usuario?.id_usuario || ""
+        },
         body: JSON.stringify({
           id_evento: eventoSeleccionado.id_evento,
           servicios: serviciosPayload
@@ -291,7 +328,6 @@ export default function Audiovisual({ usuario }) {
           ></textarea>
         </div>
 
-        {/* ACCIONES */}
         <div className="av-actions">
           <button 
             type="submit" 
@@ -302,6 +338,65 @@ export default function Audiovisual({ usuario }) {
           </button>
         </div>
       </form>
+
+      {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && (
+        <div className="av-card" style={{ marginTop: '2rem' }}>
+          <h2 className="av-title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Gestión de Solicitudes</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="requests-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '12px' }}>ID</th>
+                  <th style={{ padding: '12px' }}>EVENTO</th>
+                  <th style={{ padding: '12px' }}>EQUIPO</th>
+                  <th style={{ padding: '12px' }}>CANT.</th>
+                  <th style={{ padding: '12px' }}>ESTADO</th>
+                </tr>
+              </thead>
+              <tbody>
+                {solicitudesAV.map((av) => (
+                  <tr key={av.id_servicio} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '12px' }}>#{av.id_servicio}</td>
+                    <td style={{ padding: '12px' }}>{av.nombre_evento}</td>
+                    <td style={{ padding: '12px' }}>{av.equipo}</td>
+                    <td style={{ padding: '12px' }}>{av.cantidad}</td>
+                    <td style={{ padding: '12px' }}>
+                      {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") ? (
+                        <select
+                          value={av.estado_av || "Pendiente"}
+                          onChange={(e) => handleCambiarEstado(av.id_servicio, e.target.value)}
+                          style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                        >
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="En revisión">En revisión</option>
+                          <option value="Aprobado">Aprobado</option>
+                          <option value="Rechazado">Rechazado</option>
+                          <option value="Completado">Completado</option>
+                        </select>
+                      ) : (
+                        <span className={`status ${
+                          av.estado_av === "Pendiente" ? "pending" : 
+                          av.estado_av === "Aprobado" || av.estado_av === "Completado" ? "approved" : 
+                          av.estado_av === "Rechazado" ? "rejected" : "pending"
+                        }`} style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '0.875rem' }}>
+                          {av.estado_av || "Pendiente"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {solicitudesAV.length === 0 && (
+                  <tr>
+                    <td colSpan="5" style={{ textAlign: "center", padding: "12px", color: "#64748b" }}>
+                      No hay solicitudes registradas
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
