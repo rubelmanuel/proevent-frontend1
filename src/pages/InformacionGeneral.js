@@ -4,12 +4,18 @@ const API = "http://localhost:8080";
 
 export default function InformacionGeneral({ data, setData }) {
   const [dependencias, setDependencias] = useState([]);
+  const [tiposEvento, setTiposEvento] = useState([]);
 
   useEffect(() => {
     fetch(`${API}/dependencias`)
       .then(res => res.json())
       .then(lista => setDependencias(Array.isArray(lista) ? lista : []))
       .catch(() => console.error("Error cargando dependencias"));
+
+    fetch(`${API}/tipos-evento`)
+      .then(res => res.json())
+      .then(lista => setTiposEvento(Array.isArray(lista) ? lista : []))
+      .catch(() => console.error("Error cargando tipos de evento"));
   }, []);
 
   const handleDependencia = (e) => {
@@ -52,32 +58,11 @@ export default function InformacionGeneral({ data, setData }) {
         required
       >
         <option value="">Seleccione Tipo de Evento</option>
-        <option value="Reunión">Reunión</option>
-        <option value="CursoTaller">Curso taller práctico</option>
-        <option value="Graduación">Ceremonia de graduación</option>
-        <option value="Convenio">Firma de convenio</option>
-        <option value="Seminario">Seminario académico</option>
-        <option value="Congreso">Congreso internacional</option>
-        <option value="Conferencia">Conferencia magistral</option>
-        <option value="Cultural">Evento curso cultural</option>
-        <option value="Investigación">Jornada de investigación</option>
-        <option value="Feria">Feria universitaria</option>
-        <option value="Charlas">Charlas</option>
-        <option value="Internado">Acto internado enfermería</option>
-        <option value="Cuentas">Reunión de cuentas</option>
-        <option value="Visita">Visitas guiada de colegio</option>
-        <option value="Otro">Otro</option>
+        {tiposEvento.map(t => (
+          <option key={t.id_tipo_evento} value={t.nombre}>{t.nombre}</option>
+        ))}
       </select>
 
-      {data.tipo === "Otro" && (
-        <input
-          type="text"
-          placeholder="Especifique el tipo de evento..."
-          value={data.otroTipo || ""}
-          onChange={(e) => setData({ ...data, otroTipo: e.target.value })}
-          required
-        />
-      )}
 
       {/* Fechas y horas */}
       <label htmlFor="inicio">Fecha de inicio</label>

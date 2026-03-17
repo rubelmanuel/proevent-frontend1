@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import searchIcon from "./../img/search.png";
@@ -14,6 +14,9 @@ import Audiovisual from "./Audiovisual";
 import Evaluacion from "./Evaluacion";
 import AjustesUsuarios from "./AjustesUsuarios";
 import Bitacora from "./Bitacora";
+import AdminAudiovisual from "./AdminAudiovisual";
+import AdminEvento from "./AdminEvento";
+import { FiSliders, FiList } from "react-icons/fi";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState("Dashboard");
@@ -39,11 +42,15 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Audiovisual":
                 return <Audiovisual usuario={usuario} />;
             case "Evaluación":
-                return <Evaluacion />;
+                return <Evaluacion usuario={usuario} />;
             case "Ajustes":
                 return <AjustesUsuarios usuario={usuario} />;
             case "Bitacora":
                 return <Bitacora />;
+            case "AdminAudiovisual":
+                return <AdminAudiovisual usuario={usuario} />;
+            case "AdminEvento":
+                return <AdminEvento usuario={usuario} />;
             default:
                 return <DashboardHome usuario={usuario} />;
         }
@@ -64,7 +71,11 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Ajustes":
                 return "Ajustes de Sistema - Usuarios";
             case "Bitacora":
-                return "Bitácora de Movimientos";
+                return "Actividad de Usuario";
+            case "AdminAudiovisual":
+                return "Catálogo Audiovisual";
+            case "AdminEvento":
+                return "Catálogos de Eventos";
             default:
                 return activeTab;
         }
@@ -107,8 +118,20 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                         </li>
                         {usuario?.rol === "Administrador" && (
                             <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
-                                <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                Bitácora Audit
+                                <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Actividad de usuario
+                            </li>
+                        )}
+                        {usuario?.rol === "Administrador de Audiovisual" && (
+                            <li className={activeTab === "AdminAudiovisual" ? "active" : ""} onClick={() => setActiveTab("AdminAudiovisual")}>
+                                <FiSliders className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Catálogo Audiovisual
+                            </li>
+                        )}
+                        {usuario?.rol === "Administrador de Evento" && (
+                            <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>
+                                <FiList className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Catálogos de Eventos
                             </li>
                         )}
                     </ul>

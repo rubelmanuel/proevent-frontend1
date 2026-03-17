@@ -4,20 +4,17 @@ import { FiAlertTriangle, FiCheckCircle, FiMonitor, FiSpeaker, FiMic, FiVideo, F
 
 const API = "http://localhost:8080";
 
-const EQUIPOS_DISPONIBLES = [
-  { id: "proyector", label: "Proyector", icon: <FiMonitor /> },
-  { id: "sonido", label: "Sistema de sonido", icon: <FiSpeaker /> },
-  { id: "microfonia", label: "Micrófonos", icon: <FiMic /> },
-  { id: "camaras", label: "Cámaras (Grabación)", icon: <FiVideo /> },
-  { id: "streaming", label: "Transmisión en vivo", icon: <FiRadio /> },
-  { id: "iluminacion", label: "Iluminación", icon: <FiSun /> },
-  { id: "pantallas", label: "Pantallas o monitores extras", icon: <FiCast /> }
-];
+const IconMap = {
+  FiMonitor, FiSpeaker, FiMic, FiVideo, FiRadio, FiSun, FiCast, FiRefreshCw
+};
 
 export default function Audiovisual({ usuario }) {
   const [eventos, setEventos] = useState([]);
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null);
   
+  // Catálogo dinámico
+  const [equiposDisponibles, setEquiposDisponibles] = useState([]);
+
   // Estado para los equipos seleccionados
   const [equiposSeleccionados, setEquiposSeleccionados] = useState({});
   const [observacionesGenerales, setObservacionesGenerales] = useState("");
@@ -25,11 +22,11 @@ export default function Audiovisual({ usuario }) {
   // Estado UI
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
-  const [errorDate, setErrorDate] = useState(null); // Para la validación de 15 días
+  const [errorDate, setErrorDate] = useState(null); // Para la validación de 5 días
 
   const [solicitudesAV, setSolicitudesAV] = useState([]);
 
-  // 1. Cargar la lista de eventos del usuario (temporalmente cargamos todos por ser admin/teseo)
+  // 1. Cargar la lista de eventos del usuario y catálogo de equipos
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then((res) => res.json())
@@ -37,6 +34,11 @@ export default function Audiovisual({ usuario }) {
         setEventos(data);
       })
       .catch((err) => console.error("Error cargando eventos:", err));
+
+    fetch(`${API}/equipos-audiovisuales`)
+      .then(res => res.json())
+      .then(data => setEquiposDisponibles(Array.isArray(data) ? data : []))
+      .catch(err => console.error("Error cargando equipos", err));
       
     // Cargar todas las solicitudes si es administrador
     if (usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") {
@@ -73,7 +75,7 @@ export default function Audiovisual({ usuario }) {
     }
   };
 
-  // 2. Manejar selección del evento y validar los 15 días inmediatamente
+  // 2. Manejar selección del evento y validar los 5 días inmediatamente
   const handleSelectEvent = (e) => {
     const evId = e.target.value;
     if (!evId) {
@@ -87,7 +89,7 @@ export default function Audiovisual({ usuario }) {
     setMensaje(""); // Limpiar mensaje de exito anterior
 
     if (ev) {
-      // Validar Antelación de 15 días
+      // Validar Antelación de 5 días
       const fechaEv = new Date(ev.fecha_inicio);
       const hoy = new Date();
       fechaEv.setHours(0,0,0,0);
@@ -96,8 +98,8 @@ export default function Audiovisual({ usuario }) {
       const difTiempo = fechaEv.getTime() - hoy.getTime();
       const difDias = Math.ceil(difTiempo / (1000 * 3600 * 24));
       
-      if (difDias < 15) {
-        setErrorDate(`Políticas institucionales: Toda solicitud audiovisual debe realizarse con un mínimo de 15 días de antelación. Este evento está programado para dentro de ${difDias} día(s).`);
+      if (difDias < 5) {
+        setErrorDate(`Políticas institucionales: Toda solicitud audiovisual debe realizarse con un mínimo de 5 días de antelación. Este evento está programado para dentro de ${difDias} día(s).`);
       } else {
         setErrorDate(null);
       }
@@ -149,9 +151,9 @@ export default function Audiovisual({ usuario }) {
     // Formatear payload para la nueva ruta del backend
     const serviciosPayload = seleccionados.map((key) => {
       const eqData = equiposSeleccionados[key];
-      const eqMeta = EQUIPOS_DISPONIBLES.find(e => e.id === key);
+      const eqMeta = equiposDisponibles.find(e => e.id_equipo === Number(key));
       return {
-        equipo: eqMeta.label,
+        equipo: eqMeta ? eqMeta.nombre : "Desconocido",
         cantidad: eqData.cantidad,
         ubicacion: eqData.ubicacion,
         observaciones: observacionesGenerales
@@ -197,7 +199,7 @@ export default function Audiovisual({ usuario }) {
         <h1 className="av-title">Solicitud de Servicio Audiovisual</h1>
         <p className="av-subtitle">
           Registra los requerimientos técnicos y equipos necesarios para tu evento. 
-          Recuerda que estas solicitudes están sujetas a la validación estricta de 15 días de anticipación.
+          Recuerda que estas solicitudes están sujetas a la validación estricta de 5 días de anticipación.
         </p>
       </div>
 
@@ -266,11 +268,12 @@ export default function Audiovisual({ usuario }) {
         }}>
           <label className="form-label">Servicios y Equipos Requeridos</label>
           <div className="equipment-grid">
-            {EQUIPOS_DISPONIBLES.map((eq) => {
-              const isActive = !!equiposSeleccionados[eq.id];
+            {equiposDisponibles.map((eq) => {
+              const isActive = !!equiposSeleccionados[eq.id_equipo];
+              const IconComp = IconMap[eq.icono] || IconMap["FiMonitor"];
               return (
-                <div key={eq.id} className={`eq-card ${isActive ? 'selected' : ''}`}>
-                  <div className="eq-header" onClick={() => handleToggleEquipo(eq.id)}>
+                <div key={eq.id_equipo} className={`eq-card ${isActive ? 'selected' : ''}`}>
+                  <div className="eq-header" onClick={() => handleToggleEquipo(eq.id_equipo)}>
                     <input 
                       type="checkbox" 
                       className="eq-checkbox" 
@@ -278,9 +281,9 @@ export default function Audiovisual({ usuario }) {
                       readOnly
                     />
                     <div style={{ color: isActive ? 'var(--orange)' : 'var(--muted)', display: 'flex' }}>
-                       {eq.icon}
+                       <IconComp />
                     </div>
-                    <span className="eq-name">{eq.label}</span>
+                    <span className="eq-name">{eq.nombre}</span>
                   </div>
 
                   {isActive && (
@@ -291,8 +294,8 @@ export default function Audiovisual({ usuario }) {
                           type="number" 
                           min="1" max="50" 
                           className="eq-number-input"
-                          value={equiposSeleccionados[eq.id].cantidad}
-                          onChange={(e) => handleChangeEquipo(eq.id, 'cantidad', e.target.value)}
+                          value={equiposSeleccionados[eq.id_equipo].cantidad}
+                          onChange={(e) => handleChangeEquipo(eq.id_equipo, 'cantidad', e.target.value)}
                         />
                       </div>
                       <div className="eq-field-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -301,8 +304,8 @@ export default function Audiovisual({ usuario }) {
                           type="text" 
                           placeholder="Ej. Salón Principal, Tarima..." 
                           className="eq-text-input"
-                          value={equiposSeleccionados[eq.id].ubicacion}
-                          onChange={(e) => handleChangeEquipo(eq.id, 'ubicacion', e.target.value)}
+                          value={equiposSeleccionados[eq.id_equipo].ubicacion}
+                          onChange={(e) => handleChangeEquipo(eq.id_equipo, 'ubicacion', e.target.value)}
                         />
                       </div>
                     </div>

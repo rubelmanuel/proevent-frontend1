@@ -38,7 +38,6 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (!data.titulo.trim()) return "El título del evento es obligatorio.";
       if (!data.id_dependencia) return "Debes seleccionar una dependencia.";
       if (!data.tipo) return "Debes seleccionar el tipo de evento.";
-      if (data.tipo === "Otro" && !data.otroTipo.trim()) return "Especifica el tipo de evento.";
       if (!data.inicio) return "La fecha de inicio es obligatoria.";
       if (!data.horaInicio) return "La hora de inicio es obligatoria.";
       if (!data.fin) return "La fecha de finalización es obligatoria.";
@@ -97,14 +96,14 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     setLoading(true);
     try {
       const payload = {
-        nombre: data.tipo === "Otro" ? `${data.otroTipo} - ${data.titulo}` : data.titulo,
+        nombre: data.titulo,
         modalidad: data.modalidad,
         fecha_inicio: data.inicio,
         fecha_fin: data.fin,
         hora_inicio: data.horaInicio,
         hora_fin: data.horaFin,
         cantidad_asistentes: Number(data.asistentes),
-        tipo_evento: data.tipo === "Otro" ? data.otroTipo : data.tipo,
+        tipo_evento: data.tipo,
         monto_poa: Number(data.presupuesto),
         moneda: data.moneda,
         id_usuario: usuario?.id_usuario || null,
@@ -201,14 +200,14 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       <div className="actions" style={{ display: "flex", gap: "10px", marginTop: "24px", flexWrap: "wrap" }}>
         {!esPrimeraSeccion && (
           <button type="button" onClick={handleAnterior}
-            style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer", fontWeight: "500", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+            style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #94a3b8", background: "#f8fafc", color: "#334155", cursor: "pointer", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
             <FiArrowLeft aria-hidden="true" />
-            Anterior
+            Atrás
           </button>
         )}
 
         <button type="button" onClick={handleBorrador}
-          style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #cbd5e1", background: "white", cursor: "pointer" }}>
+          style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid #94a3b8", background: "#f8fafc", color: "#334155", cursor: "pointer", fontWeight: "600", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
           Guardar Borrador
         </button>
 
