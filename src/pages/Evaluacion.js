@@ -34,8 +34,14 @@ function Evaluacion({ usuario }) {
   useEffect(() => {
     fetch(`${API}/eventos`)
       .then(r => r.json())
-      .then(data => setEventos(data.filter(e => e.estado === 'Finalizado')))
-      .catch(() => {});
+      .then(data => {
+        if (Array.isArray(data)) {
+          setEventos(data.filter(e => e.estado === 'Finalizado'));
+        } else {
+          setEventos([]);
+        }
+      })
+      .catch(() => setEventos([]));
 
     if (isAdmin) cargarEvaluaciones();
   }, [isAdmin]);
@@ -43,8 +49,10 @@ function Evaluacion({ usuario }) {
   const cargarEvaluaciones = () => {
     fetch(`${API}/evaluaciones`)
       .then(r => r.json())
-      .then(setEvaluaciones)
-      .catch(() => {});
+      .then(data => {
+        setEvaluaciones(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setEvaluaciones([]));
   };
 
   /* ── Envío del formulario ── */

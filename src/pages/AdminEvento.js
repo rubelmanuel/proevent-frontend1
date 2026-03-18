@@ -109,19 +109,19 @@ export default function AdminEvento({ usuario }) {
       <div style={{ display: "flex", gap: "10px", marginBottom: "20px", borderBottom: "1px solid #e2e8f0", paddingBottom: "10px" }}>
         <button 
           onClick={() => setActiveTab("tipos")}
-          style={{ background: activeTab === "tipos" ? "var(--primary-color)" : "#f1f5f9", color: activeTab === "tipos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
+          style={{ background: activeTab === "tipos" ? "var(--navy)" : "#f1f5f9", color: activeTab === "tipos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
         >
           Tipos de Evento
         </button>
         <button 
           onClick={() => setActiveTab("corporativo")}
-          style={{ background: activeTab === "corporativo" ? "var(--primary-color)" : "#f1f5f9", color: activeTab === "corporativo" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
+          style={{ background: activeTab === "corporativo" ? "var(--navy)" : "#f1f5f9", color: activeTab === "corporativo" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
         >
           Detalles Corporativos
         </button>
         <button 
           onClick={() => setActiveTab("alimentos")}
-          style={{ background: activeTab === "alimentos" ? "var(--primary-color)" : "#f1f5f9", color: activeTab === "alimentos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
+          style={{ background: activeTab === "alimentos" ? "var(--navy)" : "#f1f5f9", color: activeTab === "alimentos" ? "white" : "#334155", padding: "8px 16px", borderRadius: "6px", border: "none", cursor: "pointer", fontWeight: "600" }}
         >
           Opciones de Alimentos
         </button>
@@ -139,15 +139,15 @@ export default function AdminEvento({ usuario }) {
               onChange={(e) => setNombre(e.target.value)}
               style={{ width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", transition: "border-color 0.2s" }}
               placeholder="Escriba aquí..."
-              onFocus={(e) => e.target.style.borderColor = "var(--primary-color)"}
+              onFocus={(e) => e.target.style.borderColor = "var(--navy)"}
               onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
             />
           </div>
-          <button type="submit" className="add-btn" disabled={loading} style={{ padding: "12px 24px", borderRadius: "8px", fontWeight: "600", transition: "transform 0.1s, background-color 0.2s", display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
+          <button type="submit" className="btn-add-user" disabled={loading} style={{ padding: "12px 24px", borderRadius: "8px", fontWeight: "600", transition: "transform 0.1s, background-color 0.2s", display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
             {isEditing ? "Guardar" : <><FiPlus /> Agregar</>}
           </button>
           {isEditing && (
-            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} style={{ padding: "12px 24px", background: "#f8fafc", color: "#334155", border: "1px solid #cbd5e1", borderRadius: "8px", cursor: "pointer", fontWeight: "600", transition: "background-color 0.2s" }}>
+            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} className="btn-cancel" style={{ padding: "12px 24px", borderRadius: "8px", cursor: "pointer", fontWeight: "600", transition: "background-color 0.2s" }}>
               Cancelar
             </button>
           )}

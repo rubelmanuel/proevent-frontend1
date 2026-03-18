@@ -31,7 +31,7 @@ export default function Audiovisual({ usuario }) {
     fetch(`${API}/eventos`)
       .then((res) => res.json())
       .then((data) => {
-        setEventos(data);
+        setEventos(Array.isArray(data) ? data : []);
       })
       .catch((err) => console.error("Error cargando eventos:", err));
 
@@ -50,7 +50,7 @@ export default function Audiovisual({ usuario }) {
     fetch(`${API}/audiovisual`)
       .then((res) => res.json())
       .then((data) => {
-        setSolicitudesAV(data);
+        setSolicitudesAV(Array.isArray(data) ? data : []);
       })
       .catch((err) => console.error("Error cargando solicitudes audiovisuales:", err));
   };
