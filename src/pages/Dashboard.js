@@ -8,15 +8,15 @@ import eventosIcon from "./../img/eventos.png";
 import audiovisualIcon from "./../img/audiovisual.png";
 
 import DashboardHome from "./DashboardHome";
-import SoporteHome from "./SoporteHome";
 import Eventos from "./Eventos";
 import Audiovisual from "./Audiovisual";
-import Evaluacion from "./Evaluacion";
 import AjustesUsuarios from "./AjustesUsuarios";
 import Bitacora from "./Bitacora";
 import AdminAudiovisual from "./AdminAudiovisual";
+import InventarioAudiovisual from "./InventarioAudiovisual";
 import AdminEvento from "./AdminEvento";
-import { FiSliders, FiList } from "react-icons/fi";
+import Calendario from "./Calendario";
+import { FiSliders, FiList, FiCalendar, FiMonitor, FiBox } from "react-icons/fi";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState("Dashboard");
@@ -35,22 +35,22 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
         switch (activeTab) {
             case "Dashboard":
                 return <DashboardHome usuario={usuario} />;
-            case "Soporte":
-                return <SoporteHome />;
             case "Eventos":
                 return <Eventos usuario={usuario} />;
             case "Audiovisual":
                 return <Audiovisual usuario={usuario} />;
-            case "Evaluación":
-                return <Evaluacion usuario={usuario} />;
             case "Ajustes":
                 return <AjustesUsuarios usuario={usuario} />;
             case "Bitacora":
                 return <Bitacora />;
             case "AdminAudiovisual":
                 return <AdminAudiovisual usuario={usuario} />;
+            case "InventarioAV":
+                return <InventarioAudiovisual usuario={usuario} />;
             case "AdminEvento":
                 return <AdminEvento usuario={usuario} />;
+            case "Calendario":
+                return <Calendario usuario={usuario} />;
             default:
                 return <DashboardHome usuario={usuario} />;
         }
@@ -60,22 +60,22 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
         switch (activeTab) {
             case "Dashboard":
                 return "Dashboard de Eventos";
-            case "Soporte":
-                return "Centro de Soporte";
             case "Eventos":
                 return "Gestión de Eventos";
             case "Audiovisual":
                 return "Producción Audiovisual";
-            case "Evaluación":
-                return "Evaluación de Eventos";
             case "Ajustes":
                 return "Ajustes de Sistema - Usuarios";
             case "Bitacora":
                 return "Actividad de Usuario";
             case "AdminAudiovisual":
                 return "Catálogo Audiovisual";
+            case "InventarioAV":
+                return "Inventario Audiovisual";
             case "AdminEvento":
                 return "Catálogos de Eventos";
+            case "Calendario":
+                return "Calendario de Eventos";
             default:
                 return activeTab;
         }
@@ -100,33 +100,37 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                             <img src={dashboardIcon} alt="Dashboard" className="nav-icon-img" />
                             Dashboard
                         </li>
+                        <li className={activeTab === "Calendario" ? "active" : ""} onClick={() => setActiveTab("Calendario")}>
+                            <FiCalendar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                            Calendario
+                        </li>
                         <li className={activeTab === "Eventos" ? "active" : ""} onClick={() => setActiveTab("Eventos")}>
                             <img src={eventosIcon} alt="Eventos" className="nav-icon-img" />
                             Solicitud de Eventos
                         </li>
-                        <li className={activeTab === "Audiovisual" ? "active" : ""} onClick={() => setActiveTab("Audiovisual")}>
-                            <img src={audiovisualIcon} alt="Audiovisual" className="nav-icon-img" />
-                            Solicitud de Audiovisual
-                        </li>
-                        <li className={activeTab === "Evaluación" ? "active" : ""} onClick={() => setActiveTab("Evaluación")}>
-                            <FiStar className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                            Evaluación
-                        </li>
-                        <li className={activeTab === "Soporte" ? "active" : ""} onClick={() => setActiveTab("Soporte")}>
-                            <FiHeadphones className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                            Soporte
-                        </li>
+                        {usuario?.rol !== "Solicitante" && (
+                            <li className={activeTab === "Audiovisual" ? "active" : ""} onClick={() => setActiveTab("Audiovisual")}>
+                                <img src={audiovisualIcon} alt="Audiovisual" className="nav-icon-img" />
+                                Solicitud de Audiovisual
+                            </li>
+                        )}
                         {usuario?.rol === "Administrador" && (
                             <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
                                 <FiUsers className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
                                 Actividad de usuario
                             </li>
                         )}
-                        {usuario?.rol === "Administrador de Audiovisual" && (
-                            <li className={activeTab === "AdminAudiovisual" ? "active" : ""} onClick={() => setActiveTab("AdminAudiovisual")}>
-                                <FiSliders className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
-                                Catálogo Audiovisual
-                            </li>
+                        {(usuario?.rol === "Administrador" || usuario?.rol === "Administrador de Audiovisual") && (
+                            <>
+                                <li className={activeTab === "AdminAudiovisual" ? "active" : ""} onClick={() => setActiveTab("AdminAudiovisual")}>
+                                    <FiMonitor className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Catálogo Audiovisual
+                                </li>
+                                <li className={activeTab === "InventarioAV" ? "active" : ""} onClick={() => setActiveTab("InventarioAV")}>
+                                    <FiBox className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                    Inventario Audiovisual
+                                </li>
+                            </>
                         )}
                         {usuario?.rol === "Administrador de Evento" && (
                             <li className={activeTab === "AdminEvento" ? "active" : ""} onClick={() => setActiveTab("AdminEvento")}>

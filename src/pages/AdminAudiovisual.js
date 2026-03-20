@@ -12,11 +12,16 @@ export default function AdminAudiovisual({ usuario }) {
   const [equipos, setEquipos] = useState([]);
   const [loading, setLoading] = useState(false);
   
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Form estado
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [nombre, setNombre] = useState("");
   const [icono, setIcono] = useState("FiMonitor");
+  const [cantidad_total, setCantidadTotal] = useState(0);
 
   useEffect(() => {
     cargarEquipos();
@@ -43,11 +48,12 @@ export default function AdminAudiovisual({ usuario }) {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nombre, icono })
+        body: JSON.stringify({ nombre, icono, cantidad_total })
       });
       if (res.ok) {
         setNombre("");
         setIcono("FiMonitor");
+        setCantidadTotal(0);
         setIsEditing(false);
         setCurrentId(null);
         cargarEquipos();
@@ -67,6 +73,7 @@ export default function AdminAudiovisual({ usuario }) {
     setCurrentId(eq.id_equipo);
     setNombre(eq.nombre);
     setIcono(eq.icono || "FiMonitor");
+    setCantidadTotal(eq.cantidad_total || 0);
   };
 
   const handleEliminar = async (id) => {
@@ -85,6 +92,12 @@ export default function AdminAudiovisual({ usuario }) {
       setLoading(false);
     }
   };
+
+  // Lógica de Paginación
+  const totalPages = Math.ceil(equipos.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = equipos.slice(indexOfFirstItem, indexOfLastItem);
 
   if (usuario?.rol !== "Administrador de Audiovisual") {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
@@ -131,11 +144,24 @@ export default function AdminAudiovisual({ usuario }) {
               <option value="FiCast">Proyección Local</option>
             </select>
           </div>
+          <div style={{ flex: '0 0 80px' }}>
+            <label style={{ display: "block", marginBottom: "5px", fontSize: "14px", fontWeight: "600" }}>Cant.</label>
+            <input 
+              type="number" 
+              required
+              min="0"
+              value={cantidad_total}
+              onChange={(e) => setCantidadTotal(e.target.value)}
+              style={{ width: "100%", padding: "12px", border: "1px solid #e2e8f0", borderRadius: "8px", outline: "none", transition: "border-color 0.2s" }}
+              onFocus={(e) => e.target.style.borderColor = "var(--primary-color)"}
+              onBlur={(e) => e.target.style.borderColor = "#e2e8f0"}
+            />
+          </div>
           <button type="submit" className="add-btn" disabled={loading} style={{ padding: "12px 24px", borderRadius: "8px", fontWeight: "600", transition: "transform 0.1s, background-color 0.2s", display: "flex", gap: "8px", alignItems: "center", justifyContent: "center" }}>
             {isEditing ? "Guardar Cambios" : <><FiPlus /> Agregar</>}
           </button>
           {isEditing && (
-            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); }} style={{ padding: "11px 20px", background: "#f1f5f9", color: "#334155", border: "none", borderRadius: "6px", cursor: "pointer" }}>
+            <button type="button" onClick={() => { setIsEditing(false); setNombre(""); setCantidadTotal(0); }} style={{ padding: "11px 20px", background: "#f1f5f9", color: "#334155", border: "none", borderRadius: "6px", cursor: "pointer" }}>
               Cancelar
             </button>
           )}
@@ -149,15 +175,17 @@ export default function AdminAudiovisual({ usuario }) {
               <th>ID</th>
               <th>Nombre del Equipo</th>
               <th>Ícono Asignado</th>
+              <th>Cant. Total</th>
               <th style={{textAlign: 'right'}}>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {equipos.map(eq => (
+            {currentItems.map(eq => (
               <tr key={eq.id_equipo}>
                 <td>{eq.id_equipo}</td>
                 <td><strong>{eq.nombre}</strong></td>
                 <td>{eq.icono}</td>
+                <td>{eq.cantidad_total || 0}</td>
                 <td style={{textAlign: 'right'}}>
                   <button className="action-btn edit" onClick={() => handleEditar(eq)}><FiEdit2 /></button>
                   <button className="action-btn delete" onClick={() => handleEliminar(eq.id_equipo)}><FiTrash2 /></button>
@@ -169,6 +197,34 @@ export default function AdminAudiovisual({ usuario }) {
             )}
           </tbody>
         </table>
+
+        {/* CONTROLES DE PAGINACIÓN */}
+        {equipos.length > 0 && (
+          <div className="pagination-container" style={{ marginTop: '0', borderTop: 'none' }}>
+            <div className="pagination-info">
+              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, equipos.length)} de {equipos.length} equipos
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+              <span className="page-number">
+                Página {currentPage} de {totalPages || 1}
+              </span>
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

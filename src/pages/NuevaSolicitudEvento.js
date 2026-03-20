@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiMonitor } from "react-icons/fi";
 import InformacionGeneral from "./InformacionGeneral";
 import ModalidadLugar from "./ModalidadLugar";
 import ServiciosCatering from "./ServiciosCatering";
 import PresupuestoPOA from "./PresupuestoPOA";
+import AudiovisualMiniForm from "./AudiovisualMiniForm";
 
 const API = "http://localhost:8080";
 
@@ -33,6 +34,10 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   const [error, setError] = useState("");
   const [exito, setExito] = useState("");
 
+  // Estados para el flujo condicional de Audiovisuales
+  const [needsAV, setNeedsAV] = useState(null); // null = no preguntado, true = si, false = no
+  const [avData, setAvData] = useState({ equipos: [], observaciones: "" });
+
   const validarSeccion = (seccion) => {
     if (seccion === "Información General") {
       if (!data.titulo.trim()) return "El título del evento es obligatorio.";
@@ -55,12 +60,17 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
     return null;
   };
 
-  const secciones = [
+  const baseSecciones = [
     "Información General",
     "Modalidad y Lugar",
     "Servicios alimenticios y Detalles coorporativos",
     "Presupuesto y POA"
   ];
+
+  // Las secciones cambian si el usuario es Solicitante
+  const secciones = usuario?.rol === "Solicitante" 
+    ? [...baseSecciones, "Audiovisual"] 
+    : baseSecciones;
 
   const seccionActualIndex = secciones.indexOf(activeSection);
 
@@ -84,15 +94,26 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setError("");
 
-    const errFinal = validarSeccion("Presupuesto y POA");
-    if (errFinal) {
-      setError(errFinal);
-      return;
+    if (usuario?.rol === "Solicitante") {
+      if (activeSection === "Audiovisual") {
+        if (needsAV === null) {
+          setError("Por favor, selecciona si deseas gestionar equipos audiovisuales.");
+          return;
+        }
+        if (needsAV === true && avData.equipos.length === 0) {
+          setError("Selecciona al menos un equipo o marca que no necesitas.");
+          return;
+        }
+      }
     }
 
+    ejecutarEnvioFinal();
+  };
+
+  const ejecutarEnvioFinal = async () => {
     setLoading(true);
     try {
       const payload = {
@@ -128,14 +149,46 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       if (!res.ok) {
         setError(result.mensaje || "Error al enviar la solicitud.");
       } else {
-        setExito(`Solicitud enviada con exito. ID del evento: #EVT-${result.id_evento}`);
+        const id_evento = result.id_evento;
+        
+        if (needsAV === true && avData.equipos.length > 0) {
+          try {
+            const avRes = await fetch(`${API}/audiovisual`, {
+              method: "POST",
+              headers: { 
+                "Content-Type": "application/json",
+                "x-usuario-id": usuario?.id_usuario || ""
+              },
+              body: JSON.stringify({
+                id_evento: id_evento,
+                servicios: avData.equipos
+              })
+            });
+            if (!avRes.ok) {
+              const avResult = await avRes.json();
+              setError(`Evento creado (#EVT-${id_evento}), pero la solicitud audiovisual falló: ${avResult.mensaje}`);
+              setLoading(false);
+              return;
+            }
+          } catch (avErr) {
+            console.error("Error al enviar solicitud AV:", avErr);
+            setError(`Evento creado (#EVT-${id_evento}), pero hubo un problema de conexión para la solicitud audiovisual.`);
+            setLoading(false);
+            return;
+          }
+        }
+
+        setExito(`Solicitud enviada con éxito. ID del evento: #EVT-${id_evento}${needsAV ? " (Incluye requerimientos de audiovisual)" : ""}`);
+        
         setData({
           titulo: "", departamento: "", id_dependencia: "", tipo: "", otroTipo: "",
           inicio: "", fin: "", horaInicio: "", horaFin: "",
           modalidad: "Presencial", campus: "", id_recinto: "", asistentes: "",
           items: [], catering: [], presupuesto: "", moneda: "DOP", observaciones: ""
         });
-        setActiveSection("Información General");
+        setNeedsAV(null);
+        setAvData({ equipos: [], observaciones: "" });
+        setActiveSection(secciones[0]);
       }
     } catch (err) {
       setError("No se pudo conectar al servidor. Verifica que el backend esté activo.");
@@ -196,6 +249,59 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
       {activeSection === "Presupuesto y POA" && (
         <PresupuestoPOA data={data} setData={setData} />
       )}
+      
+      {activeSection === "Audiovisual" && (
+        <div className="audiovisual-step">
+          {needsAV === null ? (
+            <div style={{ padding: '30px', textAlign: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ color: 'var(--navy)', marginBottom: '20px' }}>
+                <FiMonitor style={{ fontSize: '48px', opacity: 0.5 }} />
+              </div>
+              <h3 style={{ marginBottom: '10px' }}>¿Desea gestionar equipos audiovisuales?</h3>
+              <p style={{ color: '#64748b', marginBottom: '24px' }}>Esto incluye proyectores, micrófonos, sonido, cámaras, etc.</p>
+              
+              <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setNeedsAV(true)}
+                  style={{ padding: '12px 30px', borderRadius: '8px', border: 'none', background: 'var(--navy)', color: 'white', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  Sí, necesito
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setNeedsAV(false)}
+                  style={{ padding: '12px 30px', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#334155', fontWeight: '700', cursor: 'pointer' }}
+                >
+                  No, solo el evento
+                </button>
+              </div>
+            </div>
+          ) : needsAV === true ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                <button type="button" onClick={() => setNeedsAV(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px' }}>
+                  <FiArrowLeft /> Cambiar respuesta
+                </button>
+              </div>
+              <AudiovisualMiniForm avData={avData} setAvData={setAvData} />
+            </div>
+          ) : (
+            <div style={{ padding: '40px', textAlign: 'center', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+              <FiCheckCircle style={{ fontSize: '48px', color: '#16a34a', marginBottom: '15px' }} />
+              <h3>No se requieren servicios audiovisuales</h3>
+              <p style={{ color: '#15803d' }}>Puede proceder a finalizar el registro de su evento.</p>
+              <button 
+                type="button" 
+                onClick={() => setNeedsAV(null)}
+                style={{ marginTop: '20px', background: 'none', border: 'none', color: '#16a34a', textDecoration: 'underline', cursor: 'pointer' }}
+              >
+                Cambiar respuesta si se equivocó
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="actions" style={{ display: "flex", gap: "10px", marginTop: "24px", flexWrap: "wrap" }}>
         {!esPrimeraSeccion && (
@@ -221,7 +327,7 @@ export default function NuevaSolicitudEvento({ activeSection, setActiveSection, 
           <button type="submit" disabled={loading}
             style={{ padding: "10px 24px", borderRadius: "6px", border: "none", background: loading ? "#94a3b8" : "#16a34a", color: "white", cursor: loading ? "not-allowed" : "pointer", fontWeight: "600", display: "inline-flex", alignItems: "center", gap: "8px" }}>
             {!loading && <FiCheckCircle aria-hidden="true" />}
-            {loading ? "Enviando..." : "Enviar Solicitud"}
+            {loading ? "Enviando..." : "Finalizar y Enviar Solicitud"}
           </button>
         )}
       </div>

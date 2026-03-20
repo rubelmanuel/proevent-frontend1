@@ -9,6 +9,10 @@ export default function AdminEvento({ usuario }) {
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
   
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [nombre, setNombre] = useState("");
@@ -26,6 +30,7 @@ export default function AdminEvento({ usuario }) {
     cargarDatos();
     setIsEditing(false);
     setNombre("");
+    setCurrentPage(1); // Reset al cambiar de tab
   }, [activeTab]);
 
   const cargarDatos = () => {
@@ -91,6 +96,12 @@ export default function AdminEvento({ usuario }) {
       setLoading(false);
     }
   };
+
+  // Lógica de Paginación
+  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = dataList.slice(indexOfFirstItem, indexOfLastItem);
 
   if (usuario?.rol !== "Administrador de Evento") {
     return <div style={{ padding: "2rem" }}>No tienes permisos para acceder a esta sección.</div>;
@@ -164,7 +175,7 @@ export default function AdminEvento({ usuario }) {
             </tr>
           </thead>
           <tbody>
-            {dataList.map(item => (
+            {currentItems.map(item => (
               <tr key={item[idField]}>
                 <td>{item[idField]}</td>
                 <td><strong>{item.nombre}</strong></td>
@@ -179,6 +190,34 @@ export default function AdminEvento({ usuario }) {
             )}
           </tbody>
         </table>
+
+        {/* CONTROLES DE PAGINACIÓN */}
+        {dataList.length > 0 && (
+          <div className="pagination-container" style={{ marginTop: '0', borderTop: 'none' }}>
+            <div className="pagination-info">
+              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, dataList.length)} de {dataList.length} opciones
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </button>
+              <span className="page-number">
+                Página {currentPage} de {totalPages || 1}
+              </span>
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

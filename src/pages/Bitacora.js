@@ -9,6 +9,10 @@ export default function Bitacora() {
     const [registros, setRegistros] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    
+    // Paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Estados para los filtros
     const [searchQuery, setSearchQuery] = useState(''); // Para ID o Nombre
@@ -65,6 +69,17 @@ export default function Bitacora() {
         return matchSearch && matchAccion;
     });
 
+    // Lógica de Paginación
+    const totalPages = Math.ceil(registrosFiltrados.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = registrosFiltrados.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Resetear a pág 1 si los filtros cambian
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, filtroAccion]);
+
     return (
         <div className="bitacora-container">
             <div className="section-header" style={{ marginBottom: '20px' }}>
@@ -116,7 +131,7 @@ export default function Bitacora() {
                             </tr>
                         </thead>
                         <tbody>
-                            {registrosFiltrados.map(reg => (
+                            {currentItems.map(reg => (
                                 <tr key={reg.id_bitacora}>
                                     <td style={{ whiteSpace: 'nowrap', color: '#475569', fontSize: '0.9rem' }}>
                                         {formatearFecha(reg.fecha)}
@@ -155,6 +170,34 @@ export default function Bitacora() {
                     </table>
                 )}
             </div>
+
+            {/* CONTROLES DE PAGINACIÓN */}
+            {registrosFiltrados.length > 0 && (
+                <div className="pagination-container">
+                    <div className="pagination-info">
+                        Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, registrosFiltrados.length)} de {registrosFiltrados.length} movimientos
+                    </div>
+                    <div className="pagination-controls">
+                        <button 
+                            className="page-btn" 
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Anterior
+                        </button>
+                        <span className="page-number">
+                            Página {currentPage} de {totalPages || 1}
+                        </span>
+                        <button 
+                            className="page-btn" 
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages || totalPages === 0}
+                        >
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

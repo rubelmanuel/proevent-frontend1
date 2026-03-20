@@ -15,6 +15,10 @@ function AjustesUsuarios({ usuario }) {
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    
+    // Paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         cargarUsuarios();
@@ -136,6 +140,17 @@ function AjustesUsuarios({ usuario }) {
         usuario.rol.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Lógica de Paginación
+    const totalPages = Math.ceil(filteredUsuarios.length / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredUsuarios.slice(indexOfFirstItem, indexOfLastItem);
+
+    // Resetear a pág 1 si cambia el término de búsqueda
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
+
     return (
         <div className="ajustes-container">
             <div className="ajustes-header">
@@ -231,7 +246,7 @@ function AjustesUsuarios({ usuario }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredUsuarios.map(usuario => (
+                            {currentItems.map(usuario => (
                                 <tr key={usuario.id_usuario}>
                                     <td><strong>{usuario.nombre}</strong></td>
                                     <td>{usuario.correo}</td>
@@ -252,6 +267,34 @@ function AjustesUsuarios({ usuario }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* CONTROLES DE PAGINACIÓN */}
+                {filteredUsuarios.length > 0 && (
+                    <div className="pagination-container" style={{ marginTop: '0', borderTop: 'none' }}>
+                        <div className="pagination-info">
+                            Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredUsuarios.length)} de {filteredUsuarios.length} usuarios
+                        </div>
+                        <div className="pagination-controls">
+                            <button 
+                                className="page-btn" 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                            >
+                                Anterior
+                            </button>
+                            <span className="page-number">
+                                Página {currentPage} de {totalPages || 1}
+                            </span>
+                            <button 
+                                className="page-btn" 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                            >
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

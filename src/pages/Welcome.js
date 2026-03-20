@@ -26,18 +26,7 @@ const FEATURES = [
     title: "Soporte Audiovisual",
     desc: "Solicita grabaciones, transmisiones en vivo y cobertura audiovisual con al menos 5 días de anticipación.",
   },
-  {
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-    title: "Evaluación de Participantes",
-    desc: "Mide la satisfacción de cada evento a través de nuestro sistema integrado de evaluaciones y reportes.",
-  },
+
   {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -89,7 +78,7 @@ const POLICIES = [
       "Toda actividad debe estar autorizada en el POA y tener presupuesto.",
       "Requisitos obligatorios: Programa, autorización del Vicerrector/Director y lista de invitados.",
       "Es obligatorio cotizar con al menos tres proveedores para servicios o bienes externos.",
-      "Las solicitudes deben incluir evaluación posterior para medir la satisfacción.",
+
     ],
   },
   {
@@ -302,21 +291,7 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
               <div className="info-strip-desc">El departamento de Protocolo y Eventos coordina todos los recursos.</div>
             </div>
           </div>
-          <div className="info-strip-divider" />
-          <div className="info-strip-item">
-            <div className="info-strip-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"></line>
-                <line x1="12" y1="20" x2="12" y2="4"></line>
-                <line x1="6" y1="20" x2="6" y2="14"></line>
-                <path d="M2 20h20"></path>
-              </svg>
-            </div>
-            <div>
-              <div className="info-strip-title">Evaluación Obligatoria</div>
-              <div className="info-strip-desc">Todo evento debe incluir evaluación posterior de satisfacción.</div>
-            </div>
-          </div>
+
         </div>
       </section>
 
@@ -443,7 +418,6 @@ function Welcome({ isLoggedIn, onLoginClick, onLogoutClick }) {
             <ul className="footer-links">
               <li><a href="#features">Solicitud de Eventos</a></li>
               <li><a href="#features">Soporte Audiovisual</a></li>
-              <li><a href="#features">Evaluación</a></li>
               <li><a href="#features">Presupuesto POA</a></li>
             </ul>
           </div>

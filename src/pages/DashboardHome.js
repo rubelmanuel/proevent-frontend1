@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiClock, FiFileText, FiRefreshCw, FiCalendar, FiChevronLeft, FiChevronRight, FiEye } from "react-icons/fi";
 import './../css/Dashboard.css';
 
 const API = "http://localhost:8080";
@@ -15,17 +15,40 @@ function DashboardHome({ usuario }) {
   const [loadingAV, setLoadingAV] = useState(true);
   const [error, setError] = useState("");
   const [errorAV, setErrorAV] = useState("");
+  
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = (req) => {
+    setSelectedRequest(req);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedRequest(null);
+  };
 
   useEffect(() => {
     cargarEventos();
     cargarAudiovisuales();
-  }, []);
+    setCurrentPage(1); // Reset al cambiar usuario
+  }, [usuario]);
+
 
   const cargarAudiovisuales = async () => {
     setLoadingAV(true);
     setErrorAV("");
     try {
-      const res = await fetch(`${API}/audiovisual`);
+      const url = usuario?.rol === "Solicitante" 
+        ? `${API}/audiovisual?usuario_id=${usuario.id_usuario}`
+        : `${API}/audiovisual`;
+      const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {
         setAvRequests(data);
@@ -43,7 +66,10 @@ function DashboardHome({ usuario }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API}/eventos`);
+      const url = usuario?.rol === "Solicitante" 
+        ? `${API}/eventos?usuario_id=${usuario.id_usuario}`
+        : `${API}/eventos`;
+      const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data)) {
         setEventRequests(data);
@@ -100,23 +126,32 @@ function DashboardHome({ usuario }) {
   const formatFecha = (fechaStr) => {
     if (!fechaStr) return "—";
     const fecha = new Date(fechaStr);
+    // Adjust for timezone offset if needed, or just format
+    // Realmente, como solo es la fecha se puede parsear directamente pero
+    // le sumamos las horas para evitar problemas de timezone
+    fecha.setMinutes(fecha.getMinutes() + fecha.getTimezoneOffset());
     return fecha.toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric" });
+  };
+  
+  const formatHora = (horaStr) => {
+    if (!horaStr) return "—";
+    const [hora, min] = horaStr.split(':');
+    const h = parseInt(hora, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${min} ${ampm}`;
   };
 
   const getStatusClass = (estado) => {
     switch (estado) {
-      case "Pendiente":
-        return "pending";
-      case "Aprobado":
-        return "approved";
-      case "Rechazado":
-        return "rejected";
-      case "Finalizado":
-        return "approved";
-      default:
-        return "pending";
+      case "Pendiente": return "pending";
+      case "Aprobado": return "approved";
+      case "Rechazado": return "rejected";
+      case "Finalizado": return "approved";
+      default: return "pending";
     }
   };
+
 
   const departamentosUnicos = ["Todos", ...new Set(eventRequests.map((e) => e.dependencia).filter(Boolean))];
 
@@ -133,6 +168,16 @@ function DashboardHome({ usuario }) {
       return sortOrder === "asc" ? dA - dB : dB - dA;
     });
 
+  // Lógica de Paginación
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Resetear a pág 1 si los filtros cambian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [departmentFilter, statusFilter, dateFilter, sortOrder]);
   const totalSolicitudes = eventRequests.length;
   const pendientes = eventRequests.filter((e) => e.estado === "Pendiente").length;
   const finalizados = eventRequests.filter((e) => e.estado === "Finalizado" || e.estado === "Aprobado").length;
@@ -145,9 +190,9 @@ function DashboardHome({ usuario }) {
             <FiFileText aria-hidden="true" />
           </div>
           <div className="stat-info">
-            <span className="stat-label">SOLICITUDES</span>
+            <span className="stat-label">MIS SOLICITUDES</span>
             <h3>{totalSolicitudes}</h3>
-            <span className="stat-trend positive">Total de eventos registrados</span>
+            <span className="stat-trend positive">Total registrado</span>
           </div>
         </div>
         <div className="stat-card">
@@ -155,9 +200,9 @@ function DashboardHome({ usuario }) {
             <FiClock aria-hidden="true" />
           </div>
           <div className="stat-info">
-            <span className="stat-label">PENDIENTES</span>
+            <span className="stat-label">MIS PENDIENTES</span>
             <h3>{pendientes}</h3>
-            <span className="stat-trend warning">Eventos próximos a realizarse</span>
+            <span className="stat-trend warning">Por realizarse</span>
           </div>
         </div>
         <div className="stat-card">
@@ -165,25 +210,25 @@ function DashboardHome({ usuario }) {
             <FiCheckCircle aria-hidden="true" />
           </div>
           <div className="stat-info">
-            <span className="stat-label">FINALIZADOS</span>
+            <span className="stat-label">MIS FINALIZADOS</span>
             <h3>{finalizados}</h3>
-            <span className="stat-trend positive stat-trend-with-icon">
-              <FiCheckCircle aria-hidden="true" />
-              Eventos concluidos o aprobados
-            </span>
+            <span className="stat-trend positive">Concluidos</span>
           </div>
         </div>
       </div>
 
+
       <div className="recent-requests-section">
         <div className="section-header">
-          <h3>Solicitudes de Eventos</h3>
+          <h3>{usuario?.rol === "Solicitante" ? "Mi Historial de Solicitudes" : "Todas las Solicitudes"}</h3>
           <div className="section-filters">
-            <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
-              {departamentosUnicos.map((d) => (
-                <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
-              ))}
-            </select>
+            {usuario?.rol !== "Solicitante" && (
+              <select value={departmentFilter} onChange={(e) => setDepartmentFilter(e.target.value)}>
+                {departamentosUnicos.map((d) => (
+                  <option key={d} value={d}>{d === "Todos" ? "Todos los Departamentos" : d}</option>
+                ))}
+              </select>
+            )}
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="Todos">Todos los estados</option>
               <option value="Pendiente">Pendiente</option>
@@ -199,14 +244,7 @@ function DashboardHome({ usuario }) {
             <button className="sort-btn" onClick={() => setSortOrder((o) => o === "asc" ? "desc" : "asc")}>
               {sortOrder === "asc" ? "↑↓ Asc" : "↓↑ Desc"}
             </button>
-            <button
-              className="sort-btn icon-only-btn"
-              onClick={cargarEventos}
-              title="Recargar"
-              aria-label="Recargar eventos"
-            >
-              <FiRefreshCw aria-hidden="true" />
-            </button>
+            <button className="sort-btn icon-only-btn" onClick={cargarEventos} title="Recargar"><FiRefreshCw /></button>
           </div>
         </div>
 
@@ -219,24 +257,25 @@ function DashboardHome({ usuario }) {
             <table className="requests-table">
               <thead>
                 <tr>
-                  <th>NOMBRE DEL EVENTO</th>
-                  <th>DEPENDENCIA</th>
-                  <th>TIPO</th>
-                  <th>FECHA INICIO</th>
+                  <th>NOMBRE</th>
+                  {usuario?.rol !== "Solicitante" && <th>SOLICITANTE</th>}
+                  {usuario?.rol !== "Solicitante" && <th>DEPENDENCIA</th>}
+                  <th>FECHA</th>
                   <th>RECINTO</th>
                   <th>ESTADO</th>
-                  <th>ACCIONES</th>
+                  {usuario?.rol !== "Solicitante" && <th>DETALLES</th>}
+                  {usuario?.rol !== "Solicitante" && <th>ACCIONES</th>}
                 </tr>
               </thead>
               <tbody>
-                {filteredRequests.map((req) => (
+                {currentItems.map((req) => (
                   <tr key={req.id_evento}>
                     <td>
                       <strong>{req.nombre}</strong><br />
                       <span className="text-muted">#EVT-{req.id_evento}</span>
                     </td>
-                    <td>{req.dependencia || "—"}</td>
-                    <td><span className="badge">{req.tipo_evento}</span></td>
+                    {usuario?.rol !== "Solicitante" && <td>{req.solicitante || "—"}</td>}
+                    {usuario?.rol !== "Solicitante" && <td>{req.dependencia || "—"}</td>}
                     <td>{formatFecha(req.fecha_inicio)}</td>
                     <td>{req.recinto || "—"}</td>
                     <td>
@@ -244,100 +283,24 @@ function DashboardHome({ usuario }) {
                         {req.estado || "Pendiente"}
                       </span>
                     </td>
-                    <td>
-                      <select
-                        value={req.estado || "Pendiente"}
-                        onChange={(e) => handleCambiarEstado(req.id_evento, e.target.value)}
-                        style={{ fontSize: "12px", padding: "4px 6px", borderRadius: "4px", border: "1px solid #cbd5e1", cursor: "pointer" }}
-                      >
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="Aprobado">Aprobado</option>
-                        <option value="Rechazado">Rechazado</option>
-                        <option value="Finalizado">Finalizado</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-                {filteredRequests.length === 0 && !loading && (
-                  <tr>
-                    <td colSpan="7" style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>
-                      No se encontraron eventos.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* SECCIÓN AUDIOVISUALES */}
-      <div className="recent-requests-section" style={{ marginTop: '40px' }}>
-        <div className="section-header">
-          <h3>Solicitudes de Servicios Audiovisuales</h3>
-          <div className="section-filters">
-            <button
-              className="sort-btn icon-only-btn"
-              onClick={cargarAudiovisuales}
-              title="Recargar Audiovisuales"
-              aria-label="Recargar audiovisuales"
-            >
-              <FiRefreshCw aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-
-        <div className="table-container">
-          {loadingAV ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>Cargando solicitudes audiovisuales...</p>
-          ) : errorAV ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#dc2626" }}>{errorAV}</p>
-          ) : avRequests.length === 0 ? (
-            <p style={{ textAlign: "center", padding: "30px", color: "#64748b" }}>No hay solicitudes audiovisuales registradas.</p>
-          ) : (
-            <table className="requests-table">
-              <thead>
-                <tr>
-                  <th>EQUIPO SOLICITADO</th>
-                  <th>CANTIDAD</th>
-                  <th>EVENTO ASOCIADO</th>
-                  <th>FECHA EVENTO</th>
-                  <th>UBICACIÓN</th>
-                  <th>ESTADO</th>
-                  {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && <th>ACCIONES</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {avRequests.map((av) => (
-                  <tr key={av.id_servicio}>
-                    <td>
-                      <strong>{av.equipo}</strong><br />
-                      <span className="text-muted">#AV-{av.id_servicio}</span>
-                    </td>
-                    <td><span className="badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>x{av.cantidad || 1}</span></td>
-                    <td>
-                      <strong>{av.nombre_evento}</strong><br/>
-                      <span className="text-muted">#EVT-{av.id_evento}</span>
-                    </td>
-                    <td>{formatFecha(av.fecha_evento)}</td>
-                    <td>{av.ubicacion || "—"}</td>
-                    <td>
-                      <span className={`status ${getStatusClass(av.estado_av)}`}>
-                        {av.estado_av || "Pendiente"}
-                      </span>
-                    </td>
-                    {(usuario?.rol === "Administrador" || usuario?.rol === "Audiovisual") && (
+                    {usuario?.rol !== "Solicitante" && (
+                      <td>
+                        <button className="details-btn" onClick={() => openModal(req)}>
+                          <FiEye /> Ver
+                        </button>
+                      </td>
+                    )}
+                    {usuario?.rol !== "Solicitante" && (
                       <td>
                         <select
-                          value={av.estado_av || "Pendiente"}
-                          onChange={(e) => handleCambiarEstadoAV(av.id_servicio, e.target.value)}
-                          style={{ fontSize: "12px", padding: "4px 6px", borderRadius: "4px", border: "1px solid #cbd5e1", cursor: "pointer" }}
+                          value={req.estado || "Pendiente"}
+                          onChange={(e) => handleCambiarEstado(req.id_evento, e.target.value)}
+                          className="table-select"
                         >
                           <option value="Pendiente">Pendiente</option>
-                          <option value="En revisión">En revisión</option>
                           <option value="Aprobado">Aprobado</option>
                           <option value="Rechazado">Rechazado</option>
-                          <option value="Completado">Completado</option>
+                          <option value="Finalizado">Finalizado</option>
                         </select>
                       </td>
                     )}
@@ -347,6 +310,134 @@ function DashboardHome({ usuario }) {
             </table>
           )}
         </div>
+
+        {/* CONTROLES DE PAGINACIÓN */}
+        {filteredRequests.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Mostrando {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredRequests.length)} de {filteredRequests.length} solicitudes
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <FiChevronLeft /> Anterior
+              </button>
+              <span className="page-number">
+                Página {currentPage} de {totalPages || 1}
+              </span>
+              <button 
+                className="page-btn" 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+              >
+                Siguiente <FiChevronRight />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DETALLES */}
+        {isModalOpen && selectedRequest && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Detalles de la Solicitud</h2>
+              </div>
+              <div className="modal-body">
+                <div className="detail-group">
+                  <label>Nombre del Evento:</label>
+                  <p>{selectedRequest.nombre}</p>
+                </div>
+                <div className="detail-group">
+                  <label>Solicitante:</label>
+                  <p>{selectedRequest.solicitante || "—"}</p>
+                </div>
+                <div className="detail-group">
+                  <label>Dependencia:</label>
+                  <p>{selectedRequest.dependencia || "—"}</p>
+                </div>
+
+                <div className="detail-group">
+                  <label>Recinto:</label>
+                  <p>{selectedRequest.recinto || "—"}</p>
+                </div>
+                {selectedRequest.modalidad && (
+                  <div className="detail-group">
+                    <label>Modalidad:</label>
+                    <p>{selectedRequest.modalidad}</p>
+                  </div>
+                )}
+                {selectedRequest.tipo_evento && (
+                  <div className="detail-group">
+                    <label>Tipo de Evento:</label>
+                    <p>{selectedRequest.tipo_evento}</p>
+                  </div>
+                )}
+                <div className="detail-group">
+                  <label>Fechas:</label>
+                  <p>
+                    {formatFecha(selectedRequest.fecha_inicio)} 
+                    {selectedRequest.fecha_fin && selectedRequest.fecha_fin !== selectedRequest.fecha_inicio ? ` - ${formatFecha(selectedRequest.fecha_fin)}` : ""}
+                  </p>
+                </div>
+                {(selectedRequest.hora_inicio || selectedRequest.hora_fin) && (
+                  <div className="detail-group">
+                    <label>Horario:</label>
+                    <p>
+                      {selectedRequest.hora_inicio ? formatHora(selectedRequest.hora_inicio) : "—"} 
+                      {selectedRequest.hora_fin ? ` a ${formatHora(selectedRequest.hora_fin)}` : ""}
+                    </p>
+                  </div>
+                )}
+                {selectedRequest.cantidad_asistentes && (
+                  <div className="detail-group">
+                    <label>Asistentes Esperados:</label>
+                    <p>{selectedRequest.cantidad_asistentes}</p>
+                  </div>
+                )}
+                {(selectedRequest.monto_poa || selectedRequest.moneda) && (
+                  <div className="detail-group">
+                    <label>Presupuesto POA:</label>
+                    <p>{selectedRequest.monto_poa ? `${selectedRequest.monto_poa} ${selectedRequest.moneda || ''}` : "—"}</p>
+                  </div>
+                )}
+                {selectedRequest.detalles_corporativos && (
+                  <div className="detail-group">
+                    <label>Detalles Corporativos:</label>
+                    <p>{selectedRequest.detalles_corporativos}</p>
+                  </div>
+                )}
+                {selectedRequest.alimentos && (
+                  <div className="detail-group">
+                    <label>Servicio de Catering:</label>
+                    <p>{selectedRequest.alimentos}</p>
+                  </div>
+                )}
+                <div className="detail-group">
+                  <label>Audiovisual Requerido:</label>
+                  <p>
+                    {selectedRequest.necesita_audiovisual 
+                      ? (selectedRequest.equipos_audiovisuales || "Sí (Pendiente/Sin Especificar)") 
+                      : "No"}
+                  </p>
+                </div>
+                {selectedRequest.observaciones && (
+                  <div className="detail-group" style={{ gridColumn: "1 / -1" }}>
+                    <label>Observaciones de Montaje:</label>
+                    <p>{selectedRequest.observaciones}</p>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button className="close-btn" onClick={closeModal}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </>
   );
