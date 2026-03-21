@@ -10,7 +10,7 @@ const API = 'http://localhost:8080';
 const RECINTOS = ['Cibao Oriental', 'Nagua', 'Santo Domingo Oriental', 'Santiago'];
 const VALORACIONES = ['Muy eficiente', 'Excelente', 'Eficiente', 'Deficiente'];
 
-function Evaluacion({ usuario }) {
+function Evaluacion({ usuario, eventoEvalId, onEvalConsumed }) {
   /* ── Estado del formulario ── */
   const [respuesta, setRespuesta] = useState('');
   const [recinto, setRecinto] = useState('');
@@ -29,6 +29,14 @@ function Evaluacion({ usuario }) {
   const [evaluaciones, setEvaluaciones] = useState([]);
   const [vistaAdmin, setVistaAdmin] = useState('tabla');
   const isAdmin = usuario?.rol === 'Administrador';
+
+  /* ── Pre-carga desde notificación ── */
+  useEffect(() => {
+    if (eventoEvalId) {
+      setEventoId(String(eventoEvalId));
+      if (onEvalConsumed) onEvalConsumed();
+    }
+  }, [eventoEvalId]);
 
   /* ── Carga inicial ── */
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers } from "react-icons/fi";
+import { FiLogOut, FiSettings, FiStar, FiHeadphones, FiActivity, FiUsers, FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign } from "react-icons/fi";
 import "./../css/Dashboard.css";
 import uapaLogo from "./../img/Logo-blanco-UAPA.png";
 import searchIcon from "./../img/search.png";
@@ -20,7 +20,8 @@ import AdminEvento from "./AdminEvento";
 import Calendario from "./Calendario";
 import GestionSolicitudesAV from "./GestionSolicitudesAV";
 import PoaAdmin from "./PoaAdmin";
-import { FiSliders, FiList, FiCalendar, FiMonitor, FiBox, FiDollarSign } from "react-icons/fi";
+import VisualizarEvaluaciones from "./VisualizarEvaluaciones";
+import NotificationBell from "./NotificationBell";
 
 function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [activeTab, setActiveTab] = useState("Dashboard");
@@ -28,6 +29,7 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [editingEvent, setEditingEvent] = useState(null);
+    const [eventoEvalId, setEventoEvalId] = useState(null);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -58,7 +60,9 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
             case "Soporte":
                 return <SoporteHome usuario={usuario} />;
             case "Evaluacion":
-                return <Evaluacion usuario={usuario} />;
+                return <Evaluacion usuario={usuario} eventoEvalId={eventoEvalId} onEvalConsumed={() => setEventoEvalId(null)} />;
+            case "VisualizarEvaluaciones":
+                return <VisualizarEvaluaciones searchTerm={searchTerm} />;
             case "Bitacora":
                 return <Bitacora />;
             case "AdminAudiovisual":
@@ -109,6 +113,8 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                 return "Gestión de Solicitudes Audiovisuales";
             case "PoaAdmin":
                 return "Plan Operativo Anual";
+            case "VisualizarEvaluaciones":
+                return "Historial de Evaluaciones";
             default:
                 return activeTab;
         }
@@ -160,6 +166,12 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                     Soporte
                                 </li>
                             </>
+                        )}
+                        {usuario?.rol !== "Solicitante" && (
+                            <li className={activeTab === "VisualizarEvaluaciones" ? "active" : ""} onClick={() => setActiveTab("VisualizarEvaluaciones")}>
+                                <FiActivity className="action-icon" style={{ fontSize: '18px', opacity: 0.9, flexShrink: 0 }} aria-hidden="true" />
+                                Visualizar Evaluaciones
+                            </li>
                         )}
                         {usuario?.rol === "Administrador" && (
                             <li className={activeTab === "Bitacora" ? "active" : ""} onClick={() => setActiveTab("Bitacora")}>
@@ -235,6 +247,14 @@ function Dashboard({ usuario, isLoginGoogle, onLogoutClick }) {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
+                        <NotificationBell
+                            usuario={usuario}
+                            onGoToEvaluacion={(eventoId) => {
+                                setEventoEvalId(eventoId);
+                                setActiveTab("Evaluacion");
+                            }}
+                            onGoToVisualizarEvaluaciones={() => setActiveTab("VisualizarEvaluaciones")}
+                        />
                     </div>
                 </header>
 
